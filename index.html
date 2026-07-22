@@ -340,16 +340,23 @@
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxB8QsoZ35_2h_KQcF7PMijSx-Qdw2du1kd0D4lTZlL6BXq3VOubFr6oeRMILhYpmYG/exec";
 let items = [];
+let lastSnapshot = "";
+let isBusy = false;
 
 function uid(){ return 'i'+Date.now()+Math.random().toString(36).slice(2,7); }
 
-async function loadItems(){
+async function loadItems(isBackground){
   try{
     const res = await fetch(SCRIPT_URL);
-    items = await res.json();
+    const fresh = await res.json();
+    const snapshot = JSON.stringify(fresh);
+    if(snapshot === lastSnapshot) return;
+    if(isBackground && isBusy) return;
+    items = fresh;
+    lastSnapshot = snapshot;
   }catch(e){
     console.error('Load error', e);
-    items = [];
+    if(!isBackground) items = [];
   }
   render();
 }
@@ -361,10 +368,18 @@ async function saveItems(){
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(items)
     });
+    lastSnapshot = JSON.stringify(items);
   }catch(e){
     console.error('Save error', e);
   }
 }
+
+document.addEventListener('focusin', (e) => {
+  if(e.target.matches('input, select, textarea')) isBusy = true;
+});
+document.addEventListener('focusout', (e) => {
+  if(e.target.matches('input, select, textarea')) isBusy = false;
+});
 
 function isLow(item){ return item.qty <= item.min; }
 
@@ -477,8 +492,8 @@ document.getElementById('cards').addEventListener('click', async (e) => {
 document.getElementById('search').addEventListener('input', render);
 document.getElementById('filterCat').addEventListener('change', render);
 
-loadItems();
-setInterval(loadItems, 6000);
+loadItems(false);
+setInterval(() => loadItems(true), 6000);
 </script>
 </body>
 </html>
