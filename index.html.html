@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supply Room Ledger</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Archivo+Black&family=Archivo:wght@400;500;600;700&display=swap');
+
+  :root{
+    --paper:#F6F2E7;
+    --paper-2:#EFE9D8;
+    --ink:#26241C;
+    --ink-soft:#5B5747;
+    --line: #C9C0A6;
+    --canary:#F0D468;
+    --canary-ink:#5A4A0E;
+    --pink:#E8A9A0;
+    --pink-ink:#6E2A1F;
+    --stamp:#A3402A;
+    --stamp-2:#7A2E1D;
+    --ok:#4C6B4F;
+    --ok-bg:#E1E9DD;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Archivo', sans-serif;
+    padding:0 0 4rem;
+  }
+  .wrap{
+    max-width:900px;
+    margin:0 auto;
+    padding:2.5rem 2rem 1rem;
+    position:relative;
+  }
+  .binder{
+    position:absolute;
+    left:0;
+    top:0;
+    bottom:0;
+    width:34px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-evenly;
+    align-items:center;
+  }
+  .binder span{
+    width:16px;height:16px;border-radius:50%;
+    background:var(--paper);
+    border:2px solid var(--line);
+    box-shadow: inset 0 0 0 3px var(--paper);
+  }
+  header{
+    padding-left:44px;
+    border-bottom:3px double var(--ink);
+    padding-bottom:1rem;
+    margin-bottom:1.5rem;
+  }
+  h1{
+    font-family:'Archivo Black', sans-serif;
+    font-size:1.7rem;
+    letter-spacing:0.5px;
+    margin:0 0 0.2rem;
+    text-transform:uppercase;
+  }
+  .sub{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.8rem;
+    color:var(--ink-soft);
+    letter-spacing:0.5px;
+  }
+  section{padding-left:44px;}
+
+  .reorder-box{
+    background:var(--paper-2);
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:1rem 1.2rem;
+    margin-bottom:2rem;
+  }
+  .reorder-title{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    font-size:0.85rem;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color:var(--stamp-2);
+    margin:0 0 0.6rem;
+  }
+  .reorder-empty{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.85rem;
+    color:var(--ink-soft);
+  }
+  .reorder-list{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px;}
+  .reorder-list li{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.8rem;
+    background:var(--paper);
+    border:1px solid var(--stamp);
+    color:var(--stamp-2);
+    padding:4px 10px;
+    border-radius:2px;
+  }
+
+  form.add-form{
+    display:grid;
+    grid-template-columns: 2fr 1.3fr 0.9fr 0.9fr 0.9fr auto;
+    gap:8px;
+    align-items:end;
+    margin-bottom:2rem;
+    background:var(--paper-2);
+    border:1px dashed var(--line);
+    padding:1rem;
+    border-radius:2px;
+  }
+  form.add-form label{
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.68rem;
+    text-transform:uppercase;
+    letter-spacing:0.6px;
+    color:var(--ink-soft);
+    margin-bottom:4px;
+  }
+  form.add-form input, form.add-form select{
+    width:100%;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.85rem;
+    padding:7px 8px;
+    border:1px solid var(--ink);
+    background:#FFFDF6;
+    color:var(--ink);
+    border-radius:2px;
+  }
+  form.add-form button{
+    font-family:'Archivo', sans-serif;
+    font-weight:600;
+    font-size:0.85rem;
+    padding:8px 14px;
+    background:var(--ink);
+    color:var(--paper);
+    border:none;
+    border-radius:2px;
+    cursor:pointer;
+  }
+  form.add-form button:hover{background:#413D2E;}
+
+  .toolbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:0.8rem;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .toolbar input, .toolbar select{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.8rem;
+    padding:6px 8px;
+    border:1px solid var(--line);
+    background:#FFFDF6;
+    border-radius:2px;
+  }
+
+  .cards{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap:14px;
+  }
+  .card{
+    position:relative;
+    background:#FFFDF6;
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:0.9rem 1rem 1rem;
+    overflow:hidden;
+  }
+  .card.carbon::before{
+    content:"";
+    position:absolute;
+    left:0; top:0; bottom:0;
+    width:6px;
+    background:var(--canary);
+  }
+  .card.low.carbon::before{background:var(--pink);}
+  .card-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:6px;
+  }
+  .item-name{
+    font-weight:600;
+    font-size:0.95rem;
+    line-height:1.25;
+  }
+  .item-cat{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.68rem;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+  }
+  .del-btn{
+    background:none;border:none;cursor:pointer;
+    color:var(--ink-soft);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.75rem;
+    padding:2px 4px;
+  }
+  .del-btn:hover{color:var(--stamp);}
+
+  .qty-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin:0.6rem 0 0.5rem;
+  }
+  .qty-btn{
+    width:28px;height:28px;
+    border:1px solid var(--ink);
+    background:var(--paper);
+    border-radius:2px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:1rem;
+    cursor:pointer;
+    line-height:1;
+  }
+  .qty-btn:hover{background:var(--paper-2);}
+  .qty-num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:1.3rem;
+    font-weight:600;
+    min-width:46px;
+    text-align:center;
+  }
+  .qty-unit{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.72rem;
+    color:var(--ink-soft);
+  }
+
+  .gauge{
+    height:6px;
+    background:var(--paper-2);
+    border-radius:3px;
+    overflow:hidden;
+    margin-bottom:6px;
+  }
+  .gauge-fill{
+    height:100%;
+    background:var(--ok);
+    transition:width 0.2s;
+  }
+  .card.low .gauge-fill{background:var(--stamp);}
+
+  .meta-row{
+    display:flex;
+    justify-content:space-between;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.7rem;
+    color:var(--ink-soft);
+  }
+
+  .stamp{
+    position:absolute;
+    top:8px; right:10px;
+    font-family:'Archivo Black', sans-serif;
+    font-size:0.62rem;
+    letter-spacing:1px;
+    color:var(--stamp);
+    border:2px solid var(--stamp);
+    border-radius:4px;
+    padding:2px 6px;
+    transform:rotate(6deg);
+    text-transform:uppercase;
+    opacity:0.9;
+  }
+
+  .empty-state{
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--ink-soft);
+    font-size:0.85rem;
+    padding:2rem 0;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="binder"><span></span><span></span><span></span></div>
+
+  <header>
+    <h1>Supply room ledger</h1>
+    <div class="sub">office stationery &middot; stock control &middot; requisition tracker</div>
+  </header>
+
+  <section>
+    <div class="reorder-box">
+      <p class="reorder-title">Reorder now</p>
+      <div id="reorderContent"><p class="reorder-empty">Nothing needs restocking yet.</p></div>
+    </div>
+
+    <form class="add-form" id="addForm">
+      <div>
+        <label for="f-name">Item</label>
+        <input id="f-name" type="text" placeholder="e.g. A4 paper" required>
+      </div>
+      <div>
+        <label for="f-cat">Category</label>
+        <input id="f-cat" type="text" placeholder="e.g. Paper">
+      </div>
+      <div>
+        <label for="f-qty">Qty</label>
+        <input id="f-qty" type="number" min="0" step="1" value="0" required>
+      </div>
+      <div>
+        <label for="f-unit">Unit</label>
+        <input id="f-unit" type="text" placeholder="pcs / box">
+      </div>
+      <div>
+        <label for="f-min">Reorder at</label>
+        <input id="f-min" type="number" min="0" step="1" value="1" required>
+      </div>
+      <button type="submit">Add item</button>
+    </form>
+
+    <div class="toolbar">
+      <input id="search" type="text" placeholder="Search items...">
+      <select id="filterCat"><option value="">All categories</option></select>
+    </div>
+
+    <div class="cards" id="cards"></div>
+  </section>
+</div>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxB8QsoZ35_2h_KQcF7PMijSx-Qdw2du1kd0D4lTZlL6BXq3VOubFr6oeRMILhYpmYG/exec";
+let items = [];
+
+function uid(){ return 'i'+Date.now()+Math.random().toString(36).slice(2,7); }
+
+async function loadItems(){
+  try{
+    const res = await fetch(SCRIPT_URL);
+    items = await res.json();
+  }catch(e){
+    console.error('Load error', e);
+    items = [];
+  }
+  render();
+}
+
+async function saveItems(){
+  try{
+    await fetch(SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(items)
+    });
+  }catch(e){
+    console.error('Save error', e);
+  }
+}
+
+function isLow(item){ return item.qty <= item.min; }
+
+function populateCategoryFilter(){
+  const sel = document.getElementById('filterCat');
+  const current = sel.value;
+  const cats = Array.from(new Set(items.map(i => i.cat).filter(Boolean))).sort();
+  sel.innerHTML = '<option value="">All categories</option>' + cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  sel.value = cats.includes(current) ? current : '';
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function render(){
+  populateCategoryFilter();
+  const search = document.getElementById('search').value.trim().toLowerCase();
+  const catFilter = document.getElementById('filterCat').value;
+
+  const lowItems = items.filter(isLow);
+  const reorderContent = document.getElementById('reorderContent');
+  if(lowItems.length === 0){
+    reorderContent.innerHTML = '<p class="reorder-empty">Nothing needs restocking yet.</p>';
+  } else {
+    reorderContent.innerHTML = '<ul class="reorder-list">' +
+      lowItems.map(i => `<li>${escapeHtml(i.name)} &mdash; ${i.qty} ${escapeHtml(i.unit||'')} left</li>`).join('') +
+      '</ul>';
+  }
+
+  let visible = items.filter(i => {
+    const matchesSearch = !search || i.name.toLowerCase().includes(search) || (i.cat||'').toLowerCase().includes(search);
+    const matchesCat = !catFilter || i.cat === catFilter;
+    return matchesSearch && matchesCat;
+  });
+
+  const cardsEl = document.getElementById('cards');
+  if(items.length === 0){
+    cardsEl.innerHTML = '<p class="empty-state">No items yet. Add your first stationery item above to start tracking stock.</p>';
+    return;
+  }
+  if(visible.length === 0){
+    cardsEl.innerHTML = '<p class="empty-state">No items match your search.</p>';
+    return;
+  }
+
+  cardsEl.innerHTML = visible.map(item => {
+    const low = isLow(item);
+    const ceiling = Math.max(item.min * 2, item.qty, 1);
+    const pct = Math.min(100, Math.round((item.qty / ceiling) * 100));
+    return `
+      <div class="card carbon ${low ? 'low' : ''}" data-id="${item.id}">
+        ${low ? '<div class="stamp">Low stock</div>' : ''}
+        <div class="card-top">
+          <div>
+            <div class="item-name">${escapeHtml(item.name)}</div>
+            ${item.cat ? `<div class="item-cat">${escapeHtml(item.cat)}</div>` : ''}
+          </div>
+          <button class="del-btn" data-action="delete" title="Remove item"><i class="ti ti-trash" aria-hidden="true"></i>&#10005;</button>
+        </div>
+        <div class="qty-row">
+          <button class="qty-btn" data-action="dec">&minus;</button>
+          <span class="qty-num">${item.qty}</span>
+          <button class="qty-btn" data-action="inc">+</button>
+          <span class="qty-unit">${escapeHtml(item.unit||'')}</span>
+        </div>
+        <div class="gauge"><div class="gauge-fill" style="width:${pct}%"></div></div>
+        <div class="meta-row">
+          <span>Reorder at ${item.min}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+document.getElementById('addForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = document.getElementById('f-name').value.trim();
+  if(!name) return;
+  const cat = document.getElementById('f-cat').value.trim();
+  const qty = parseInt(document.getElementById('f-qty').value, 10) || 0;
+  const unit = document.getElementById('f-unit').value.trim();
+  const min = parseInt(document.getElementById('f-min').value, 10) || 0;
+
+  items.push({ id: uid(), name, cat, qty, unit, min });
+  await saveItems();
+  e.target.reset();
+  document.getElementById('f-qty').value = 0;
+  document.getElementById('f-min').value = 1;
+  render();
+});
+
+document.getElementById('cards').addEventListener('click', async (e) => {
+  const btn = e.target.closest('button[data-action]');
+  if(!btn) return;
+  const card = e.target.closest('.card');
+  const id = card.dataset.id;
+  const item = items.find(i => i.id === id);
+  if(!item) return;
+
+  if(btn.dataset.action === 'inc') item.qty += 1;
+  if(btn.dataset.action === 'dec') item.qty = Math.max(0, item.qty - 1);
+  if(btn.dataset.action === 'delete'){
+    items = items.filter(i => i.id !== id);
+  }
+  await saveItems();
+  render();
+});
+
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('filterCat').addEventListener('change', render);
+
+loadItems();
+</script>
+</body>
+</html>
