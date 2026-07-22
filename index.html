@@ -478,6 +478,7 @@ document.getElementById('search').addEventListener('input', render);
 document.getElementById('filterCat').addEventListener('change', render);
 
 loadItems();
+setInterval(loadItems, 6000);
 </script>
 </body>
 </html>
