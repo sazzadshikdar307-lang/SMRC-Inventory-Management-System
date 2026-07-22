@@ -361,17 +361,24 @@ async function loadItems(isBackground){
   render();
 }
 
+let saveTimer = null;
 async function saveItems(){
-  try{
-    await fetch(SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(items)
-    });
-    lastSnapshot = JSON.stringify(items);
-  }catch(e){
-    console.error('Save error', e);
-  }
+  if(saveTimer) clearTimeout(saveTimer);
+  return new Promise((resolve) => {
+    saveTimer = setTimeout(async () => {
+      try{
+        await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(items)
+        });
+        lastSnapshot = JSON.stringify(items);
+      }catch(e){
+        console.error('Save error', e);
+      }
+      resolve();
+    }, 500);
+  });
 }
 
 document.addEventListener('focusin', (e) => {
@@ -438,7 +445,7 @@ function render(){
             <div class="item-name">${escapeHtml(item.name)}</div>
             ${item.cat ? `<div class="item-cat">${escapeHtml(item.cat)}</div>` : ''}
           </div>
-          <button class="del-btn" data-action="delete" title="Remove item"><i class="ti ti-trash" aria-hidden="true"></i>&#10005;</button>
+          <button class="del-btn" data-action="delete" title="Remove item">&#10005;</button>
         </div>
         <div class="qty-row">
           <button class="qty-btn" data-action="dec">&minus;</button>
